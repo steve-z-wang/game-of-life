@@ -11,6 +11,7 @@ class Controller {
     this.view.bindClick(this.handleClick);
     this.view.bindUpdate(this.handleUpdate);
     this.view.bindStartStop(this.handleStartStop); 
+    this.view.bindHandleWindowResize(this.handleWindowResize); 
 
     const pattern = [
       [10, 10],
@@ -42,6 +43,10 @@ class Controller {
   handleStartStop = () => {
     this.model.update(); 
   }
+
+  handleWindowResize = () => {
+    this.view.render(this.model.state);
+  }; 
 }
 
 const app = new Controller(new Model(), new View());

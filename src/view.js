@@ -2,7 +2,7 @@ export class View {
   constructor() {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
-    this.cellSize = 5;
+    this.cellSize = 8;
     this.updateInterval = 150;
 
     this.startStopBtn = document.getElementById("start-stop");
@@ -56,5 +56,13 @@ export class View {
         this.startStopBtn.innerHTML = "start";
       }
     });
+  }
+
+  bindHandleWindowResize(handler) {
+    window.addEventListener("resize", () => {
+      this.canvas.width = document.body.clientWidth;
+      this.canvas.height = document.body.clientHeight;
+      handler(); 
+    }) 
   }
 }
