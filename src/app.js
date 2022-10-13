@@ -10,6 +10,7 @@ class Controller {
     this.model.bindGridChanged(this.onGridChanged);
     this.view.bindClick(this.handleClick);
     this.view.bindUpdate(this.handleUpdate);
+    this.view.bindStartStop(this.handleStartStop); 
 
     const pattern = [
       [10, 10],
@@ -37,6 +38,10 @@ class Controller {
   handleClick = (x, y) => {
     this.model.toggle(x, y);
   };
+
+  handleStartStop = () => {
+    this.model.update(); 
+  }
 }
 
 const app = new Controller(new Model(), new View());
