@@ -9,8 +9,8 @@ html {
 
 body {
     margin: auto;
-    width: 95%;
-    height: 90%;
+    width: 97%;
+    height: 87%;
 }
 
 #canvas {
@@ -18,13 +18,8 @@ body {
     z-index: -1;
 }
 
-
 #top-bar {
     margin: 0;
     border: 0;
     padding: 0;
-}
-
-#title {
-    margin: 5px;
 }

@@ -2,20 +2,27 @@ export class View {
   constructor() {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
-    this.cellSize = 8;
+    this.cellSize = 7;
     this.updateInterval = 150;
 
     this.startStopBtn = document.getElementById("start-stop");
     this.isPaused = false;
 
+    this.isMoving = false;
+    this.offsetX = 0;
+    this.offsetY = 0;
+
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
   }
 
-  grid2canvas = (x, y) => [x * this.cellSize, y * this.cellSize];
+  grid2canvas = (x, y) => [
+    this.offsetX + x * this.cellSize,
+    this.offsetY + y * this.cellSize,
+  ];
   canvas2grid = (x, y) => [
-    Math.floor(x / this.cellSize),
-    Math.floor(y / this.cellSize),
+    Math.floor((x - this.offsetX) / this.cellSize),
+    Math.floor((y - this.offsetY) / this.cellSize),
   ];
 
   render(state) {
@@ -32,18 +39,22 @@ export class View {
     }
   }
 
-  bindClick(handler) {
+  bindCanvasChanged(callback) {
+    this.onCanvasChanged = callback;
+  }
+
+  bindHandleClick(handler) {
     this.canvas.addEventListener("click", (event) => {
       const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
       handler(x, y);
     });
   }
 
-  bindUpdate(handler) {
+  bindHandleUpdate(handler) {
     this.updateIntervalId = setInterval(handler, this.updateInterval);
   }
 
-  bindStartStop(handler) {
+  bindHandleStartStop(handler) {
     this.startStopBtn.addEventListener("click", () => {
       if (this.isPaused) {
         handler();
@@ -58,11 +69,42 @@ export class View {
     });
   }
 
-  bindHandleWindowResize(handler) {
+  bindHandleWindowResize() {
     window.addEventListener("resize", () => {
       this.canvas.width = document.body.clientWidth;
       this.canvas.height = document.body.clientHeight;
-      handler(); 
-    }) 
+      this.onCanvasChanged();
+    });
+  }
+
+  bindHandleMouseDown() {
+    this.canvas.addEventListener("mousedown", (event) => {
+      this.startX = event.offsetX;
+      this.startY = event.offsetY;
+      this.isMoving = true;
+    });
+  }
+
+  bindHandleMouseMove() {
+    this.canvas.addEventListener("mousemove", (event) => {
+      if (this.isMoving) {
+        const curX = event.offsetX;
+        const curY = event.offsetY;
+
+        this.offsetX += curX - this.startX; 
+        this.offsetY += curY - this.startY; 
+        
+        this.startX = curX;
+        this.startY = curY;
+
+        this.onCanvasChanged();
+      }
+    });
+  }
+
+  bindHandleMouseUp(handler) {
+    this.canvas.addEventListener("mouseup", (event) => {
+      this.isMoving = false;
+    });
   }
 }

@@ -2,16 +2,19 @@ import { Model } from "./Model";
 import { View } from "./View";
 
 class Controller {
-
   constructor(model, view) {
     this.model = model;
     this.view = view;
 
     this.model.bindGridChanged(this.onGridChanged);
-    this.view.bindClick(this.handleClick);
-    this.view.bindUpdate(this.handleUpdate);
-    this.view.bindStartStop(this.handleStartStop); 
-    this.view.bindHandleWindowResize(this.handleWindowResize); 
+    this.view.bindCanvasChanged(this.onCanvasChanged); 
+    this.view.bindHandleClick(this.handleClick);
+    this.view.bindHandleUpdate(this.handleUpdate);
+    this.view.bindHandleStartStop(this.handleStartStop);
+    this.view.bindHandleWindowResize();
+    this.view.bindHandleMouseDown();
+    this.view.bindHandleMouseMove();
+    this.view.bindHandleMouseUp();
 
     const pattern = [
       [10, 10],
@@ -32,6 +35,10 @@ class Controller {
     this.view.render(this.model.state);
   };
 
+  onCanvasChanged = () => {
+    this.view.render(this.model.state);
+  }
+
   handleUpdate = () => {
     this.model.update();
   };
@@ -41,12 +48,9 @@ class Controller {
   };
 
   handleStartStop = () => {
-    this.model.update(); 
-  }
+    this.model.update();
+  };
 
-  handleWindowResize = () => {
-    this.view.render(this.model.state);
-  }; 
 }
 
 const app = new Controller(new Model(), new View());
