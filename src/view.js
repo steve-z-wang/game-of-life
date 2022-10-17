@@ -3,7 +3,7 @@ export class View {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.cellSize = 7;
-    this.updateInterval = 150;
+    this.updateInterval = 100;
 
     this.startStopBtn = document.getElementById("start-stop");
     this.isPaused = false;
@@ -11,6 +11,8 @@ export class View {
     this.isMoving = false;
     this.offsetX = 0;
     this.offsetY = 0;
+
+    this.intervalSlider = document.getElementById("interval-slider");
 
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
@@ -91,9 +93,9 @@ export class View {
         const curX = event.offsetX;
         const curY = event.offsetY;
 
-        this.offsetX += curX - this.startX; 
-        this.offsetY += curY - this.startY; 
-        
+        this.offsetX += curX - this.startX;
+        this.offsetY += curY - this.startY;
+
         this.startX = curX;
         this.startY = curY;
 
@@ -105,6 +107,22 @@ export class View {
   bindHandleMouseUp(handler) {
     this.canvas.addEventListener("mouseup", (event) => {
       this.isMoving = false;
+    });
+  }
+
+  bindHandleUpdateIntervalChange(handler) {
+    this.intervalSlider.addEventListener("change", (event) => {
+
+      const r2s = (x) => Math.floor(Math.pow(10, (99 - x) / 99 * 2 + 1));
+
+      this.updateInterval = r2s(parseInt(this.intervalSlider.value));
+
+      console.log(this.intervalSlider.value, this.updateInterval);
+
+      clearInterval(this.updateIntervalId);
+
+      handler();
+      this.updateIntervalId = setInterval(handler, this.updateInterval);
     });
   }
 }

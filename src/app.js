@@ -7,14 +7,15 @@ class Controller {
     this.view = view;
 
     this.model.bindGridChanged(this.onGridChanged);
-    this.view.bindCanvasChanged(this.onCanvasChanged); 
+    this.view.bindCanvasChanged(this.onCanvasChanged);
     this.view.bindHandleClick(this.handleClick);
     this.view.bindHandleUpdate(this.handleUpdate);
-    this.view.bindHandleStartStop(this.handleStartStop);
+    this.view.bindHandleStartStop(this.handleUpdate);
     this.view.bindHandleWindowResize();
     this.view.bindHandleMouseDown();
     this.view.bindHandleMouseMove();
     this.view.bindHandleMouseUp();
+    this.view.bindHandleUpdateIntervalChange(this.handleUpdate);
 
     const pattern = [
       [10, 10],
@@ -37,7 +38,7 @@ class Controller {
 
   onCanvasChanged = () => {
     this.view.render(this.model.state);
-  }
+  };
 
   handleUpdate = () => {
     this.model.update();
@@ -46,11 +47,6 @@ class Controller {
   handleClick = (x, y) => {
     this.model.toggle(x, y);
   };
-
-  handleStartStop = () => {
-    this.model.update();
-  };
-
 }
 
 const app = new Controller(new Model(), new View());
