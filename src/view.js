@@ -2,8 +2,10 @@ export class View {
   constructor() {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
-    this.cellSize = 7;
     this.updateInterval = 100;
+
+    this.cellSize = 20;
+    this.gridWidth = 2;
 
     this.startStopBtn = document.getElementById("start-stop");
     this.isPaused = false;
@@ -19,17 +21,52 @@ export class View {
   }
 
   grid2canvas = (x, y) => [
-    this.offsetX + x * this.cellSize,
-    this.offsetY + y * this.cellSize,
+    this.offsetX + x * (this.cellSize + this.gridWidth),
+    this.offsetY + y * (this.cellSize + this.gridWidth),
   ];
+
   canvas2grid = (x, y) => [
-    Math.floor((x - this.offsetX) / this.cellSize),
-    Math.floor((y - this.offsetY) / this.cellSize),
+    Math.floor((x - this.offsetX) / (this.cellSize + this.gridWidth)),
+    Math.floor((y - this.offsetY) / (this.cellSize + this.gridWidth)),
   ];
+
+  drawLine(x1, y1, x2, y2) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
+  }
 
   render(state) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.fillStyle = "green";
+
+    // draw grid
+    this.ctx.strokeStyle = "green";
+    this.ctx.lineWidth = this.gridWidth;
+
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    const margin = this.gridWidth / 2;
+    const increment = this.gridWidth + this.cellSize;
+
+    for (
+      let x = (this.offsetX % increment) - margin;
+      x < width + margin;
+      x += increment
+    ) {
+      this.drawLine(x, 0, x, height);
+    }
+
+    for (
+      let y = (this.offsetY % increment) - margin;
+      y < height + margin;
+      y += increment
+    ) {
+      this.drawLine(0, y, width, y);
+    }
+
+    // draw cell
+    this.ctx.fillStyle = "red";
     for (const [x, y, a] of state.entries()) {
       if (a === 1) {
         this.ctx.fillRect(
@@ -112,8 +149,7 @@ export class View {
 
   bindHandleUpdateIntervalChange(handler) {
     this.intervalSlider.addEventListener("change", (event) => {
-
-      const r2s = (x) => Math.floor(Math.pow(10, (99 - x) / 99 * 2 + 1));
+      const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
 
       this.updateInterval = r2s(parseInt(this.intervalSlider.value));
 

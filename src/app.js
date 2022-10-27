@@ -18,11 +18,11 @@ class Controller {
     this.view.bindHandleUpdateIntervalChange(this.handleUpdate);
 
     const pattern = [
-      [10, 10],
-      [11, 11],
-      [12, 9],
-      [12, 10],
-      [12, 11],
+      [5, 5],
+      [6, 6],
+      [7, 4],
+      [7, 5],
+      [7, 6],
     ];
 
     for (let [x, y] of pattern) {
