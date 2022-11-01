@@ -5,7 +5,7 @@ export class View {
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
     this.cellSize = 20;
-    this.gridWidth = 2;
+    this.gridWidth = 1;
     this.offsetX = 0;
     this.offsetY = 0;
 
@@ -22,6 +22,40 @@ export class View {
     this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
     this.canvas.addEventListener("mouseout", this.onMouseOut.bind(this));
     window.addEventListener("resize", this.onWindowResize.bind(this));
+
+    this.centerBtn = document.getElementById("center");
+    this.centerBtn.addEventListener("click", this.handleCenterCells.bind(this));
+    this.isCentered = false;
+  }
+
+  centerCells() {
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
+    for (const [x, y, a] of this.gameState.entries()) {
+      const [x2, y2] = this.grid2canvas(x, y);
+      if (a == 1) {
+        sumX += x2;
+        sumY += y2;
+        count += 1;
+      }
+    }
+
+    if (count > 0) {
+      const difX = this.canvas.width / 2 - sumX / count;
+      const difY = this.canvas.height / 2 - sumY / count;
+
+      this.offsetX += difX;
+      this.offsetY += difY;
+    }
+  }
+
+  handleCenterCells() {
+    if (!this.isCentered) {
+      this.centerCells();
+      this.render(this.gameState);
+    }
+    this.isCentered = !this.isCentered;
   }
 
   updateCount(count) {
@@ -30,11 +64,13 @@ export class View {
 
   bindHandlePause(handler) {
     this.startStopBtn.addEventListener("click", () => {
-      const isPaused = handler();
-      if (isPaused) {
+      handler(this.isPaused);
+      if (this.isPaused) {
         this.startStopBtn.innerHTML = "stop";
+        this.isPaused = false;
       } else {
         this.startStopBtn.innerHTML = "start";
+        this.isPaused = true;
       }
     });
   }
@@ -84,15 +120,17 @@ export class View {
   }
 
   onMouseUp(event) {
-    this.mouseDown = false;
-
     if (!this.drag) {
       this.onClick(event);
     }
+
+    this.mouseDown = false;
+    this.drag = false;
   }
 
   onMouseOut() {
     this.mouseDown = false;
+    this.drag = false;
   }
 
   onClick(event) {
@@ -102,6 +140,10 @@ export class View {
 
   render(state) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    if (this.isCentered && !this.drag && !this.isPaused) {
+      this.centerCells();
+    }
 
     // draw grid
     this.ctx.strokeStyle = "green";
@@ -130,6 +172,7 @@ export class View {
 
     // draw cell
     this.ctx.fillStyle = "red";
+
     for (const [x, y, a] of state.entries()) {
       if (a === 1) {
         this.ctx.fillRect(

@@ -25,7 +25,6 @@ class Controller {
 
     this.view.render(this.model.state);
 
-    this.isPaused = false;
     this.updateInterval = 100;
     this.startGameCycle();
   }
@@ -40,14 +39,12 @@ class Controller {
     clearInterval(this.updateIntervalId);
   }
 
-  handlePause = () => {
-    if (this.isPaused) {
+  handlePause = (isPaused) => {
+    if (isPaused) {
       this.model.update();
       this.startGameCycle();
-      this.isPaused = false;
     } else {
       this.stopGameCycle();
-      this.isPaused = true;
     }
   };
 
