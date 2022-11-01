@@ -62,7 +62,7 @@ class Controller {
 
   onGameStateUpdated = (state, count) => {
     this.view.render(state);
-    this.view.updateCount(count);
+    this.view.setCount(count);
   };
 }
 
