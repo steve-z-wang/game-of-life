@@ -81,8 +81,8 @@ export class Model {
     state.set(x, y, 0);
   }
 
-  bindRenderView(callback) {
-    this.renderView = callback;
+  bindGameStateChanged(callback) {
+    this.render = callback;
   }
 
   toggle(x, y) {
@@ -91,7 +91,7 @@ export class Model {
     } else {
       this._activate(this.state, x, y);
     }
-    this.renderView(this.state);
+    this.render(this.state);
   }
 
   update() {
@@ -118,6 +118,6 @@ export class Model {
 
     this.state = newState;
     this.stateCounter += 1;
-    this.renderView(this.state);
+    this.render(this.state);
   }
 }
