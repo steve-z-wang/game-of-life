@@ -2,42 +2,122 @@ export class View {
   constructor() {
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
-    this.updateInterval = 100;
-
+    this.canvas.width = document.body.clientWidth;
+    this.canvas.height = document.body.clientHeight;
     this.cellSize = 20;
     this.gridWidth = 2;
+    this.offsetX = 0;
+    this.offsetY = 0;
 
     this.startStopBtn = document.getElementById("start-stop");
     this.isPaused = false;
 
-    this.isMoving = false;
-    this.offsetX = 0;
-    this.offsetY = 0;
-
     this.intervalSlider = document.getElementById("interval-slider");
-
-    this.canvas.width = document.body.clientWidth;
-    this.canvas.height = document.body.clientHeight;
+    this.updateInterval = 100;
 
     this.generationCounter = document.getElementById("generation-counter");
     this.generationCounter.value = 1;
+
+    this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
+    this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
+    this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
+    this.canvas.addEventListener("mouseout", this.onMouseOut.bind(this));
+    window.addEventListener("resize", this.onWindowResize.bind(this));
   }
 
-  grid2canvas = (x, y) => [
-    this.offsetX + x * (this.cellSize + this.gridWidth),
-    this.offsetY + y * (this.cellSize + this.gridWidth),
-  ];
+  bindUpdateModel(callback) {
+    this.updateModel = callback;
+  }
 
-  canvas2grid = (x, y) => [
-    Math.floor((x - this.offsetX) / (this.cellSize + this.gridWidth)),
-    Math.floor((y - this.offsetY) / (this.cellSize + this.gridWidth)),
-  ];
+  bindHandleUpdate() {
+    this.updateIntervalId = setInterval(this.updateModel, this.updateInterval);
+  }
 
-  drawLine(x1, y1, x2, y2) {
-    this.ctx.beginPath();
-    this.ctx.moveTo(x1, y1);
-    this.ctx.lineTo(x2, y2);
-    this.ctx.stroke();
+  bindHandleStartStop() {
+    this.startStopBtn.addEventListener("click", () => {
+      if (this.isPaused) {
+        this.updateModel();
+        this.updateIntervalId = setInterval(
+          this.updateModel,
+          this.updateInterval
+        );
+        this.isPaused = false;
+        this.startStopBtn.innerHTML = "stop";
+      } else {
+        clearInterval(this.updateIntervalId);
+        this.isPaused = true;
+        this.startStopBtn.innerHTML = "start";
+      }
+    });
+  }
+
+  bindHandleUpdateIntervalChange() {
+    this.intervalSlider.addEventListener("change", (event) => {
+      const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
+
+      this.updateInterval = r2s(parseInt(this.intervalSlider.value));
+
+      console.log(this.intervalSlider.value, this.updateInterval);
+
+      clearInterval(this.updateIntervalId);
+
+      this.updateModel();
+      this.updateIntervalId = setInterval(
+        this.updateModel,
+        this.updateInterval
+      );
+    });
+  }
+
+  onWindowResize() {
+    this.canvas.width = document.body.clientWidth;
+    this.canvas.height = document.body.clientHeight;
+    // this.render(this.gameState);
+  }
+
+  onMouseDown(event) {
+    this.startX = event.offsetX;
+    this.startY = event.offsetY;
+    this.mouseDown = true;
+    this.drag = false;
+  }
+
+  onMouseMove(event) {
+    if (this.mouseDown) {
+      this.drag = true;
+
+      const curX = event.offsetX;
+      const curY = event.offsetY;
+
+      this.offsetX += curX - this.startX;
+      this.offsetY += curY - this.startY;
+
+      this.startX = curX;
+      this.startY = curY;
+
+      this.render(this.gameState);
+    }
+  }
+
+  onMouseUp(event) {
+    this.mouseDown = false;
+
+    if (!this.drag) {
+      this.onClick(event);
+    }
+  }
+
+  onClick(event) {
+    const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
+    this.onClickHandler(x, y);
+  }
+
+  onMouseOut() {
+    this.mouseDown = false;
+  }
+
+  bindHandleToggleCell(handler) {
+    this.onClickHandler = handler;
   }
 
   render(state) {
@@ -79,107 +159,24 @@ export class View {
         );
       }
     }
+
+    this.gameState = state;
   }
 
-  bindUpdateModel(callback) {
-    this.updateModel = callback;
+  drawLine(x1, y1, x2, y2) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
   }
 
-  bindCanvasChanged(callback) {
-    this.onCanvasChanged = callback;
-  }
+  grid2canvas = (x, y) => [
+    this.offsetX + x * (this.cellSize + this.gridWidth),
+    this.offsetY + y * (this.cellSize + this.gridWidth),
+  ];
 
-  bindHandleUpdate() {
-    this.updateIntervalId = setInterval(this.updateModel, this.updateInterval);
-  }
-
-  bindHandleStartStop() {
-    this.startStopBtn.addEventListener("click", () => {
-      if (this.isPaused) {
-        this.updateModel();
-        this.updateIntervalId = setInterval(
-          this.updateModel,
-          this.updateInterval
-        );
-        this.isPaused = false;
-        this.startStopBtn.innerHTML = "stop";
-      } else {
-        clearInterval(this.updateIntervalId);
-        this.isPaused = true;
-        this.startStopBtn.innerHTML = "start";
-      }
-    });
-  }
-
-  bindHandleWindowResize() {
-    window.addEventListener("resize", () => {
-      this.canvas.width = document.body.clientWidth;
-      this.canvas.height = document.body.clientHeight;
-      this.onCanvasChanged();
-    });
-  }
-
-  bindHandleMouseDown() {
-    this.canvas.addEventListener("mousedown", (event) => {
-      this.startX = event.offsetX;
-      this.startY = event.offsetY;
-      this.mouseDown = true;
-      this.drag = false;
-    });
-  }
-
-  bindHandleMouseMove() {
-    this.canvas.addEventListener("mousemove", (event) => {
-      if (this.mouseDown) {
-        this.drag = true;
-
-        const curX = event.offsetX;
-        const curY = event.offsetY;
-
-        this.offsetX += curX - this.startX;
-        this.offsetY += curY - this.startY;
-
-        this.startX = curX;
-        this.startY = curY;
-
-        this.onCanvasChanged();
-      }
-    });
-  }
-
-  bindHandleMouseUp(handler) {
-    this.canvas.addEventListener("mouseup", (event) => {
-      this.mouseDown = false;
-
-      // on click
-      if (!this.drag) {
-        const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
-        handler(x, y);
-      }
-    });
-  }
-
-  bindHandleMouseOut() {
-    this.canvas.addEventListener("mouseout", (event) => {
-      this.mouseDown = false;
-    })
-  }
-
-  bindHandleUpdateIntervalChange() {
-    this.intervalSlider.addEventListener("change", (event) => {
-      const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
-
-      this.updateInterval = r2s(parseInt(this.intervalSlider.value));
-
-      console.log(this.intervalSlider.value, this.updateInterval);
-
-      clearInterval(this.updateIntervalId);
-
-      this.updateModel();
-      this.updateIntervalId = setInterval(
-        this.updateModel,
-        this.updateInterval
-      );
-    });
-  }
+  canvas2grid = (x, y) => [
+    Math.floor((x - this.offsetX) / (this.cellSize + this.gridWidth)),
+    Math.floor((y - this.offsetY) / (this.cellSize + this.gridWidth)),
+  ];
 }
