@@ -81,7 +81,7 @@ export class Model {
     state.set(x, y, 0);
   }
 
-  bindGameStateChanged(callback) {
+  bindGameStateUpdated(callback) {
     this.render = callback;
   }
 
@@ -91,7 +91,6 @@ export class Model {
     } else {
       this._activate(this.state, x, y);
     }
-    this.render(this.state);
   }
 
   update() {
@@ -118,6 +117,6 @@ export class Model {
 
     this.state = newState;
     this.stateCounter += 1;
-    this.render(this.state);
+    this.render(this.state, this.stateCounter); 
   }
 }

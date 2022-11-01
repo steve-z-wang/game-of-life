@@ -13,7 +13,6 @@ export class View {
     this.isPaused = false;
 
     this.intervalSlider = document.getElementById("interval-slider");
-    this.updateInterval = 100;
 
     this.generationCounter = document.getElementById("generation-counter");
     this.generationCounter.value = 1;
@@ -25,54 +24,39 @@ export class View {
     window.addEventListener("resize", this.onWindowResize.bind(this));
   }
 
-  bindUpdateModel(callback) {
-    this.updateModel = callback;
+  updateCount(count) {
+    this.generationCounter.value = count;
   }
 
-  bindHandleUpdate() {
-    this.updateIntervalId = setInterval(this.updateModel, this.updateInterval);
-  }
-
-  bindHandleStartStop() {
+  bindHandlePause(handler) {
     this.startStopBtn.addEventListener("click", () => {
-      if (this.isPaused) {
-        this.updateModel();
-        this.updateIntervalId = setInterval(
-          this.updateModel,
-          this.updateInterval
-        );
-        this.isPaused = false;
+      const isPaused = handler();
+      if (isPaused) {
         this.startStopBtn.innerHTML = "stop";
       } else {
-        clearInterval(this.updateIntervalId);
-        this.isPaused = true;
         this.startStopBtn.innerHTML = "start";
       }
     });
   }
 
-  bindHandleUpdateIntervalChange() {
+  bindHandleUpdateRateChange(handler) {
     this.intervalSlider.addEventListener("change", (event) => {
       const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
 
-      this.updateInterval = r2s(parseInt(this.intervalSlider.value));
+      const interval = r2s(parseInt(this.intervalSlider.value));
 
-      console.log(this.intervalSlider.value, this.updateInterval);
-
-      clearInterval(this.updateIntervalId);
-
-      this.updateModel();
-      this.updateIntervalId = setInterval(
-        this.updateModel,
-        this.updateInterval
-      );
+      handler(interval);
     });
+  }
+
+  bindHandleToggleCell(callback) {
+    this.onClickHandler = callback;
   }
 
   onWindowResize() {
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
-    // this.render(this.gameState);
+    this.render(this.gameState);
   }
 
   onMouseDown(event) {
@@ -107,17 +91,13 @@ export class View {
     }
   }
 
-  onClick(event) {
-    const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
-    this.onClickHandler(x, y);
-  }
-
   onMouseOut() {
     this.mouseDown = false;
   }
 
-  bindHandleToggleCell(handler) {
-    this.onClickHandler = handler;
+  onClick(event) {
+    const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
+    this.onClickHandler(x, y);
   }
 
   render(state) {
