@@ -18,6 +18,9 @@ export class View {
 
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
+
+    this.generationCounter = document.getElementById("generation-counter");
+    this.generationCounter.value = 1;
   }
 
   grid2canvas = (x, y) => [
@@ -78,26 +81,26 @@ export class View {
     }
   }
 
+  bindUpdateModel(callback) {
+    this.updateModel = callback;
+  }
+
   bindCanvasChanged(callback) {
     this.onCanvasChanged = callback;
   }
 
-  bindHandleClick(handler) {
-    this.canvas.addEventListener("click", (event) => {
-      const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
-      handler(x, y);
-    });
+  bindHandleUpdate() {
+    this.updateIntervalId = setInterval(this.updateModel, this.updateInterval);
   }
 
-  bindHandleUpdate(handler) {
-    this.updateIntervalId = setInterval(handler, this.updateInterval);
-  }
-
-  bindHandleStartStop(handler) {
+  bindHandleStartStop() {
     this.startStopBtn.addEventListener("click", () => {
       if (this.isPaused) {
-        handler();
-        this.updateIntervalId = setInterval(handler, this.updateInterval);
+        this.updateModel();
+        this.updateIntervalId = setInterval(
+          this.updateModel,
+          this.updateInterval
+        );
         this.isPaused = false;
         this.startStopBtn.innerHTML = "stop";
       } else {
@@ -120,13 +123,16 @@ export class View {
     this.canvas.addEventListener("mousedown", (event) => {
       this.startX = event.offsetX;
       this.startY = event.offsetY;
-      this.isMoving = true;
+      this.mouseDown = true;
+      this.drag = false;
     });
   }
 
   bindHandleMouseMove() {
     this.canvas.addEventListener("mousemove", (event) => {
-      if (this.isMoving) {
+      if (this.mouseDown) {
+        this.drag = true;
+
         const curX = event.offsetX;
         const curY = event.offsetY;
 
@@ -143,11 +149,23 @@ export class View {
 
   bindHandleMouseUp(handler) {
     this.canvas.addEventListener("mouseup", (event) => {
-      this.isMoving = false;
+      this.mouseDown = false;
+
+      // on click
+      if (!this.drag) {
+        const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
+        handler(x, y);
+      }
     });
   }
 
-  bindHandleUpdateIntervalChange(handler) {
+  bindHandleMouseOut() {
+    this.canvas.addEventListener("mouseout", (event) => {
+      this.mouseDown = false;
+    })
+  }
+
+  bindHandleUpdateIntervalChange() {
     this.intervalSlider.addEventListener("change", (event) => {
       const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
 
@@ -157,8 +175,11 @@ export class View {
 
       clearInterval(this.updateIntervalId);
 
-      handler();
-      this.updateIntervalId = setInterval(handler, this.updateInterval);
+      this.updateModel();
+      this.updateIntervalId = setInterval(
+        this.updateModel,
+        this.updateInterval
+      );
     });
   }
 }

@@ -53,10 +53,6 @@ export class Model {
     this.stateCounter = 0;
   }
 
-  bindGridChanged(callback) {
-    this.onGridChanged = callback;
-  }
-
   _getNeighbors = (x, y) =>
     [
       [-1, -1],
@@ -85,13 +81,17 @@ export class Model {
     state.set(x, y, 0);
   }
 
+  bindRenderView(callback) {
+    this.renderView = callback;
+  }
+
   toggle(x, y) {
     if (this.state.get(x, y) === 1) {
       this._kill(this.state, x, y);
     } else {
       this._activate(this.state, x, y);
     }
-    this.onGridChanged(this.state);
+    this.renderView(this.state);
   }
 
   update() {
@@ -118,6 +118,6 @@ export class Model {
 
     this.state = newState;
     this.stateCounter += 1;
-    this.onGridChanged(this.state);
+    this.renderView(this.state);
   }
 }

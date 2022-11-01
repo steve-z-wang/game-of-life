@@ -6,16 +6,18 @@ class Controller {
     this.model = model;
     this.view = view;
 
-    this.model.bindGridChanged(this.onGridChanged);
+    this.view.bindUpdateModel(this.updateModel);
     this.view.bindCanvasChanged(this.onCanvasChanged);
-    this.view.bindHandleClick(this.handleClick);
-    this.view.bindHandleUpdate(this.handleUpdate);
-    this.view.bindHandleStartStop(this.handleUpdate);
+    this.model.bindRenderView(this.renderView);
+
+    this.view.bindHandleUpdate();
+    this.view.bindHandleStartStop();
     this.view.bindHandleWindowResize();
     this.view.bindHandleMouseDown();
     this.view.bindHandleMouseMove();
-    this.view.bindHandleMouseUp();
-    this.view.bindHandleUpdateIntervalChange(this.handleUpdate);
+    this.view.bindHandleMouseUp(this.handleClick);
+    this.view.bindHandleUpdateIntervalChange(this.updateModel);
+    this.view.bindHandleMouseOut(); 
 
     const pattern = [
       [5, 5],
@@ -32,16 +34,16 @@ class Controller {
     this.view.render(this.model.state);
   }
 
-  onGridChanged = () => {
-    this.view.render(this.model.state);
-  };
-
   onCanvasChanged = () => {
     this.view.render(this.model.state);
   };
 
-  handleUpdate = () => {
+  updateModel = () => {
     this.model.update();
+  };
+
+  renderView = (state) => {
+    this.view.render(state);
   };
 
   handleClick = (x, y) => {
