@@ -27,101 +27,10 @@ export class View {
     this._addLocalListeners();
   }
 
-  render(state) {
-    this.gameState = state;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // grid
-    this.ctx.strokeStyle = this.colors.grid;
-    this.ctx.lineWidth = this.lineWidth;
-
-    for (
-      let x = (this.offset.x % this.gridSize) - this.lineWidth / 2;
-      x < this.canvas.width + this.lineWidth / 2;
-      x += this.gridSize
-    ) {
-      this.drawLine(x, 0, x, this.canvas.height);
-    }
-
-    for (
-      let y = (this.offset.y % this.gridSize) - this.lineWidth / 2;
-      y < this.canvas.height + this.lineWidth / 2;
-      y += this.gridSize
-    ) {
-      this.drawLine(0, y, this.canvas.width, y);
-    }
-
-    // cell
-    this.ctx.fillStyle = this.colors.cell;
-
-    for (const [x, y, isAlive] of state.entries()) {
-      if (isAlive) {
-        const [x2, y2] = this.grid2canvas(x, y);
-        const size = this.gridSize - this.lineWidth;
-        this.ctx.fillRect(x2, y2, size, size);
-      }
-    }
-  }
-
-  drawLine(x1, y1, x2, y2) {
-    this.ctx.beginPath();
-    this.ctx.moveTo(x1, y1);
-    this.ctx.lineTo(x2, y2);
-    this.ctx.stroke();
-  }
-
-  grid2canvas = (x, y) => [
-    this.offset.x + x * this.gridSize,
-    this.offset.y + y * this.gridSize,
-  ];
-
-  canvas2grid = (x, y) => [
-    Math.floor((x - this.offset.x) / this.gridSize),
-    Math.floor((y - this.offset.y) / this.gridSize),
-  ];
-
   onWindowResize() {
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
     this.render(this.gameState);
-  }
-
-  onMouseOut() {
-    this.mouseDown = false;
-    this.drag = false;
-  }
-
-  onMouseUp(event) {
-    if (!this.drag) {
-      const [x, y] = this.canvas2grid(event.offsetX, event.offsetY);
-      this.toggleCell(x, y);
-    }
-    this.mouseDown = false;
-    this.drag = false;
-  }
-
-  oneMouseMove(event) {
-    if (this.mouseDown) {
-      this.drag = true;
-
-      const curX = event.offsetX;
-      const curY = event.offsetY;
-
-      this.offset.x += curX - this.startX;
-      this.offset.y += curY - this.startY;
-
-      this.startX = curX;
-      this.startY = curY;
-
-      this.render(this.gameState);
-    }
-  }
-
-  onMouseDown(event) {
-    this.startX = event.offsetX;
-    this.startY = event.offsetY;
-    this.mouseDown = true;
-    this.drag = false;
   }
 
   setCount(count) {
@@ -133,7 +42,7 @@ export class View {
     let sumY = 0;
     let count = 0;
     for (const [x, y, a] of this.gameState.entries()) {
-      const [x2, y2] = this.grid2canvas(x, y);
+      const [x2, y2] = this._grid2canvas(x, y);
       if (a == 1) {
         sumX += x2;
         sumY += y2;
@@ -169,34 +78,66 @@ export class View {
 
   bindHandleUpdateRateChange(handler) {
     this.intervalSlider.addEventListener("change", () => {
-      const r2s = (x) => Math.floor(Math.pow(10, ((99 - x) / 99) * 2 + 1));
-
-      const interval = r2s(parseInt(this.intervalSlider.value));
-
-      handler(interval);
+      const value = parseInt(this.intervalSlider.value);
+      const interval = Math.floor(Math.pow(10, ((99 - value) / 99) * 2 + 1));
+      if (!isPaused) {
+        handler(interval);
+      }
     });
   }
 
+  onMouseDown(event) {
+    this.mouseDown = true;
+    this.drag = {
+      inMotion: false,
+      startingPositionX: event.offsetX,
+      startingPositionY: event.offsetY,
+    };
+  }
+
+  onMouseMove(event) {
+    const [diffX, diffY] = [
+      event.offsetX - this.drag.startingPositionX,
+      event.offsetY - this.drag.startingPositionY,
+    ];
+
+    if (
+      this.drag.inMotion ||
+      // start dragging if the distance moved is greater than 5 pixels value
+      (this.mouseDown && Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2)) > 5)
+    ) {
+      this.offset.x += diffX;
+      this.offset.y += diffY;
+
+      this.drag.inMotion = true;
+      this.drag.startingPositionX = event.offsetX;
+      this.drag.startingPositionY = event.offsetY;
+
+      this.render(this.gameState);
+    }
+  }
+
+  onMouseUp(event) {
+    if (!this.drag.inMotion) {
+      this.toggleCell(...this._canvas2grid(event.offsetX, event.offsetY));
+    }
+
+    this.mouseDown = false;
+    this.drag = null;
+  }
+
+  onMouseOut() {
+    this.mouseDown = false;
+    this.drag = null;
+  }
+
   _addLocalListeners() {
-    this.canvas.addEventListener("mousedown", (event) => {
-      this.onMouseDown(event);
-    });
+    this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
+    this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
+    this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
+    this.canvas.addEventListener("mouseout", this.onMouseOut.bind(this));
 
-    this.canvas.addEventListener("mousemove", (event) => {
-      this.oneMouseMove(event);
-    });
-
-    this.canvas.addEventListener("mouseup", (event) => {
-      this.onMouseUp(event);
-    });
-
-    this.canvas.addEventListener("mouseout", () => {
-      this.onMouseOut();
-    });
-
-    window.addEventListener("resize", () => {
-      this.onWindowResize();
-    });
+    window.addEventListener("resize", this.onWindowResize.bind(this));
 
     this.centerBtn.addEventListener("click", () => {
       if (!this.isCentered) {
@@ -218,4 +159,57 @@ export class View {
       this.render(this.gameState);
     });
   }
+
+  render(state) {
+    this.gameState = state;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // grid
+    this.ctx.strokeStyle = this.colors.grid;
+    this.ctx.lineWidth = this.lineWidth;
+
+    for (
+      let x = (this.offset.x % this.gridSize) - this.lineWidth / 2;
+      x < this.canvas.width + this.lineWidth / 2;
+      x += this.gridSize
+    ) {
+      this._drawLine(x, 0, x, this.canvas.height);
+    }
+
+    for (
+      let y = (this.offset.y % this.gridSize) - this.lineWidth / 2;
+      y < this.canvas.height + this.lineWidth / 2;
+      y += this.gridSize
+    ) {
+      this._drawLine(0, y, this.canvas.width, y);
+    }
+
+    // cell
+    this.ctx.fillStyle = this.colors.cell;
+
+    for (const [x, y, isAlive] of state.entries()) {
+      if (isAlive) {
+        const [x2, y2] = this._grid2canvas(x, y);
+        const size = this.gridSize - this.lineWidth;
+        this.ctx.fillRect(x2, y2, size, size);
+      }
+    }
+  }
+
+  _drawLine(x1, y1, x2, y2) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
+  }
+
+  _grid2canvas = (x, y) => [
+    this.offset.x + x * this.gridSize,
+    this.offset.y + y * this.gridSize,
+  ];
+
+  _canvas2grid = (x, y) => [
+    Math.floor((x - this.offset.x) / this.gridSize),
+    Math.floor((y - this.offset.y) / this.gridSize),
+  ];
 }
