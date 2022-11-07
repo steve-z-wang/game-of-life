@@ -12,11 +12,11 @@ class Controller {
     this.view.bindHandleUpdateRateChange(this.handleUpdateRateChange);
 
     const pattern = [
-      [5, 5],
-      [6, 6],
-      [7, 4],
-      [7, 5],
-      [7, 6],
+      [-2, -1],
+      [-1, 0],
+      [0, -2],
+      [0, -1],
+      [0, 0],
     ];
 
     for (let [x, y] of pattern) {
@@ -26,7 +26,6 @@ class Controller {
     this.view.render(this.model.state);
 
     this.updateInterval = 100;
-    this.startGameCycle();
   }
 
   startGameCycle() {
