@@ -1,2 +1,3 @@
 # game-of-life
- John Conway's Game of Life
+
+Play John Conway's Game of Life at https://steve-z-wang.github.io/game-of-life/
