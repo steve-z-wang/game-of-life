@@ -14,25 +14,29 @@
     <h1 id="title">Conway's Game of Life</h1>
 
     <div id="control-group">
-        <div class="slidercontainer">
-            <a>speed</a>
-            <input id="update-interval-slider" class="slider" type="range" min="0" max="99">
+
+        <div id="control-group-1">
+            <div class="control-group-1 slidercontainer noselect">
+                <label>speed</label>
+                <input id="update-interval-slider" class="slider" type="range" min="0" max="99">
+            </div>
+
+            <div class="control-group-1 slidercontainer noselect">
+                <label>grid size</label>
+                <input id="grid-size-slider" class="slider" type="range" min="5" max="50">
+            </div>
+
+            <div class="control-group-1 noselect">
+                <label>generation:</label>
+                <input id="generation-counter" type="number" readonly></input>
+            </div>
         </div>
 
-        <div class="slidercontainer">
-            <a>speed</a>
-            <a>grid size</a>
-            <input id="grid-size-slider" class="slider" type="range" min="5" max="50">
+        <div id="control-group-2">
+            <button class="control-group-2 button noselect" id="start-stop-btn">stop</button>
+            <button class="control-group-2 button noselect" id="next-btn">next</button>
+            <button class="control-group-2 button noselect" id="clear-reset-btn">clear</button>
         </div>
-
-        <div class="slidercontainer">
-            <a>gen</a>
-            <input id="generation-counter" type="number" readonly>
-        </div>
-
-        <button id="start-stop-btn">stop</button>
-        <button id="next-btn">next</button>
-        <button id="clear-reset-btn">clear</button>
     </div>
 
     <script type="module" src="./app.js"></script>

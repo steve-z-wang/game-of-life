@@ -1,31 +1,37 @@
 export class View {
   constructor() {
+    this.gridSize = 20;
+    this.lineWidth = 0.5;
+    this.colors = { grid: "green", cell: "red" };
+
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
+    this.offset = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
 
     this.startStopBtn = document.getElementById("start-stop-btn");
     this.startStopBtn.innerHTML = "start";
 
+    this.nextBtn = document.getElementById("next-btn");
+
+    this.clearResetBtn = document.getElementById("clear-reset-btn");
+    this.clearResetBtn.innerHTML = "clear";
+
     this.updateIntervalSlider = document.getElementById(
       "update-interval-slider"
     );
+    this.updateIntervalSlider.value = 50;
 
     this.gridSizeSlider = document.getElementById("grid-size-slider");
+    this.gridSizeSlider.value = this.gridSize;
+
     this.generationCounter = document.getElementById("generation-counter");
     this.generationCounter.value = 0;
 
     // this.centerBtn = document.getElementById("center");
     // this.centerBtn.innerHTML = "center cells"
-
-    this.gridSize = 20;
-    this.lineWidth = 0.5;
-    this.offset = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
-    this.isCentered = false;
-    this.colors = { grid: "green", cell: "red" };
-
-    this.gridSizeSlider.value = this.gridSize;
+    // this.isCentered = false;
 
     this._addLocalListeners();
   }
@@ -41,7 +47,21 @@ export class View {
   bindHandlePause(handler) {
     this.startStopBtn.addEventListener("click", () => {
       const isPaused = handler();
+
       this.startStopBtn.innerHTML = isPaused ? "start" : "stop";
+    });
+  }
+
+  bindHandleClearReset(handler) {
+    this.clearResetBtn.addEventListener("click", () => {
+      handler();
+      this.clearResetBtn.innerHTML = "clear";
+    });
+  }
+
+  bindHandleUpdate(handler) {
+    this.nextBtn.addEventListener("click", () => {
+      handler();
     });
   }
 
@@ -56,7 +76,8 @@ export class View {
   centerCells() {
     let [sumX, sumY, count] = [0, 0, 0];
 
-    for (const [x, y, isAlive] of this.gameState.entries()) {
+    for (const [xy, isAlive] of this.gameState.entries()) {
+      const [x, y] = xy.split(",").map((x) => parseInt(x));
       const [x2, y2] = this._grid2canvas(x, y);
 
       if (isAlive) {
@@ -158,6 +179,10 @@ export class View {
     });
   }
 
+  update() {
+    this.clearResetBtn.innerHTML = "reset";
+  }
+
   render(state) {
     this.gameState = state;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -189,7 +214,8 @@ export class View {
     // cell
     this.ctx.fillStyle = this.colors.cell;
 
-    for (const [x, y, isAlive] of state.entries()) {
+    for (const [xy, isAlive] of state.entries()) {
+      const [x, y] = xy.split(",").map((x) => parseInt(x));
       if (isAlive) {
         const [x2, y2] = this._grid2canvas(x, y);
         const size = this.gridSize - this.lineWidth;

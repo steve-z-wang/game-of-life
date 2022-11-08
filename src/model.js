@@ -1,57 +1,24 @@
-class Grid {
-  constructor() {
-    this._dict = new Map();
-  }
-
-  get(x, y) {
-    return this._dict.get(`${x},${y}`);
-  }
-  set(x, y, a) {
-    this._dict.set(`${x},${y}`, a);
-  }
-  delete(x, y) {
-    this._dict.delete(`${x},${y}`);
-  }
-
-  has(x, y) {
-    return this._dict.has(`${x},${y}`);
-  }
-
-  size() {
-    return this._dict.size;
-  }
-
-  copy() {
-    const newGrid = new Grid();
-    newGrid._dict = new Map(this._dict);
-    return newGrid;
-  }
-
-  [Symbol.iterator]() {
-    let iterator = this._dict[Symbol.iterator]();
-    return {
-      next: () => {
-        const result = iterator.next();
-        if (result.done) return result;
-        const [xy, v] = result.value;
-        return {
-          value: [...xy.split(",").map((x) => parseInt(x)), v],
-          done: false,
-        };
-      },
-    };
-  }
-
-  entries() {
-    return this;
-  }
-}
-
 export class Model {
   constructor() {
-    this.startingState = new Grid(); 
-    this.state = this.startingState.copy(); 
-    this.stateCounter = 0;
+    this._state = new Map();
+    this._state0 = new Map();
+    this._count = 0;
+  }
+
+  _get(state, x, y) {
+    return state.get(`${x},${y}`);
+  }
+
+  _set(state, x, y, a) {
+    state.set(`${x},${y}`, a);
+  }
+
+  _delete(state, x, y) {
+    state.delete(`${x},${y}`);
+  }
+
+  _has(state, x, y) {
+    return state.has(`${x},${y}`);
   }
 
   _getNeighbors = (x, y) =>
@@ -68,58 +35,102 @@ export class Model {
 
   _activate(state, x, y) {
     // mark cell as alive
-    state.set(x, y, 1);
+    this._set(state, x, y, true);
 
     // add neighbors to the map
     for (const [x2, y2] of this._getNeighbors(x, y)) {
-      if (!state.has(x2, y2)) {
-        state.set(x2, y2, 0);
+      if (!this._has(state, x2, y2)) {
+        this._set(state, x2, y2, false);
       }
     }
   }
 
   _kill(state, x, y) {
-    state.set(x, y, 0);
+    this._set(state, x, y, false);
   }
 
-  bindGameStateUpdated(callback) {
+  bindOnStateChanged(callback) {
     this.render = callback;
   }
 
-  toggle(x, y) {
-    if (this.state.get(x, y) === 1) {
-      this._kill(this.state, x, y);
-    } else {
-      this._activate(this.state, x, y);
+  getState() {
+    return this._state;
+  }
+
+  _setState(state) {
+    this._state = state;
+    this._state0 = new Map(this._state);
+    this._count = 0;
+    this.render(this._state);
+  }
+
+  setState(pattern) {
+    const state = new Map();
+
+    for (const [x, y] of pattern) {
+      this._activate(state, x, y);
     }
-    this.startingState = this.state.copy(); 
-    this.stateCounter = 0; 
+
+    this._state = state;
+    this._state0 = new Map(this._state);
+    this.render(this._state);
+  }
+
+  getCount() {
+    return this._count;
+  }
+
+  toggle(x, y) {
+    const isAlive = this._get(this._state, x, y);
+
+    if (isAlive) {
+      this._kill(this._state, x, y);
+    } else {
+      this._activate(this._state, x, y);
+    }
+
+    this._state0 = new Map(this._state);
+    this._count = 0;
+
+    this.render(this._state);
+    return this._state;
   }
 
   update() {
-    const newState = this.state.copy();
+    const newState = new Map(this._state);
 
     // loop through all cells
-    for (const [x, y, v] of this.state.entries()) {
+    for (const [xy, isAlive] of this._state.entries()) {
+      const [x, y] = xy.split(",").map((x) => parseInt(x));
+
       // count neighbors
       const count = this._getNeighbors(x, y)
-        .map(([x, y]) => this.state.get(x, y))
+        .map(([x, y]) => this._get(this._state, x, y))
         .filter(Boolean)
         .reduce((sum, a) => sum + a, 0);
 
-      if (count === 0) {
-        newState.delete(x, y);
+      if (count == 0) {
+        this._delete(newState, x, y);
 
         // apply game's rules
-      } else if (v === 1 && (count < 2 || count > 3)) {
+      } else if (isAlive && (count < 2 || count > 3)) {
         this._kill(newState, x, y);
-      } else if (v === 0 && count === 3) {
+      } else if (!isAlive && count == 3) {
         this._activate(newState, x, y);
       }
     }
 
-    this.state = newState;
-    this.stateCounter += 1;
-    this.render(this.state, this.stateCounter); 
+    this._count += 1;
+    this._state = newState;
+    this.render(this._state);
+    return this._state;
+  }
+
+  reset() {
+    this._setState(this._state0);
+  }
+
+  clear() {
+    this._setState(new Map());
   }
 }
