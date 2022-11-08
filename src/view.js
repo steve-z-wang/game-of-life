@@ -5,20 +5,23 @@ export class View {
     this.canvas.width = document.body.clientWidth;
     this.canvas.height = document.body.clientHeight;
 
-    this.startStopBtn = document.getElementById("start-stop");
+    this.startStopBtn = document.getElementById("start-stop-btn");
     this.startStopBtn.innerHTML = "start";
 
-    this.intervalSlider = document.getElementById("interval-slider");
-    this.gridSizeSlider = document.getElementById("grid-size-slider");
+    this.updateIntervalSlider = document.getElementById(
+      "update-interval-slider"
+    );
 
+    this.gridSizeSlider = document.getElementById("grid-size-slider");
     this.generationCounter = document.getElementById("generation-counter");
-    this.generationCounter.value = 1;
-    this.centerBtn = document.getElementById("center");
+    this.generationCounter.value = 0;
+
+    // this.centerBtn = document.getElementById("center");
+    // this.centerBtn.innerHTML = "center cells"
 
     this.gridSize = 20;
-    this.lineWidth = 1;
+    this.lineWidth = 0.5;
     this.offset = { x: this.canvas.width / 2, y: this.canvas.height / 2 };
-    this.isPaused = true;
     this.isCentered = false;
     this.colors = { grid: "green", cell: "red" };
 
@@ -27,36 +30,8 @@ export class View {
     this._addLocalListeners();
   }
 
-  onWindowResize() {
-    this.canvas.width = document.body.clientWidth;
-    this.canvas.height = document.body.clientHeight;
-    this.render(this.gameState);
-  }
-
   setCount(count) {
     this.generationCounter.value = count;
-  }
-
-  centerCells() {
-    let sumX = 0;
-    let sumY = 0;
-    let count = 0;
-    for (const [x, y, a] of this.gameState.entries()) {
-      const [x2, y2] = this._grid2canvas(x, y);
-      if (a == 1) {
-        sumX += x2;
-        sumY += y2;
-        count += 1;
-      }
-    }
-
-    if (count > 0) {
-      const difX = this.canvas.width / 2 - sumX / count;
-      const difY = this.canvas.height / 2 - sumY / count;
-
-      this.offset.x += difX;
-      this.offset.y += difY;
-    }
   }
 
   bindHandleToggleCell(callback) {
@@ -65,25 +40,42 @@ export class View {
 
   bindHandlePause(handler) {
     this.startStopBtn.addEventListener("click", () => {
-      handler(this.isPaused);
-      if (this.isPaused) {
-        this.startStopBtn.innerHTML = "stop";
-        this.isPaused = false;
-      } else {
-        this.startStopBtn.innerHTML = "start";
-        this.isPaused = true;
-      }
+      const isPaused = handler();
+      this.startStopBtn.innerHTML = isPaused ? "start" : "stop";
     });
   }
 
-  bindHandleUpdateRateChange(handler) {
-    this.intervalSlider.addEventListener("change", () => {
-      const value = parseInt(this.intervalSlider.value);
+  bindHandleUpdateIntervalChange(handler) {
+    this.updateIntervalSlider.addEventListener("change", () => {
+      const value = parseInt(this.updateIntervalSlider.value);
       const interval = Math.floor(Math.pow(10, ((99 - value) / 99) * 2 + 1));
-      if (!isPaused) {
-        handler(interval);
-      }
+      handler(interval);
     });
+  }
+
+  centerCells() {
+    let [sumX, sumY, count] = [0, 0, 0];
+
+    for (const [x, y, isAlive] of this.gameState.entries()) {
+      const [x2, y2] = this._grid2canvas(x, y);
+
+      if (isAlive) {
+        sumX += x2;
+        sumY += y2;
+        count += 1;
+      }
+    }
+
+    if (count > 0) {
+      this.offset.x += this.canvas.width / 2 - sumX / count;
+      this.offset.y += this.canvas.height / 2 - sumY / count;
+    }
+  }
+
+  onWindowResize() {
+    this.canvas.width = document.body.clientWidth;
+    this.canvas.height = document.body.clientHeight;
+    this.render(this.gameState);
   }
 
   onMouseDown(event) {
@@ -96,30 +88,34 @@ export class View {
   }
 
   onMouseMove(event) {
-    const [diffX, diffY] = [
-      event.offsetX - this.drag.startingPositionX,
-      event.offsetY - this.drag.startingPositionY,
-    ];
+    if (this.mouseDown) {
+      const [diffX, diffY] = [
+        event.offsetX - this.drag.startingPositionX,
+        event.offsetY - this.drag.startingPositionY,
+      ];
 
-    if (
-      this.drag.inMotion ||
-      // start dragging if the distance moved is greater than 5 pixels value
-      (this.mouseDown && Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2)) > 5)
-    ) {
-      this.offset.x += diffX;
-      this.offset.y += diffY;
+      if (
+        this.drag.inMotion ||
+        // start dragging if the distance moved is greater than 5 pixels value
+        Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2)) > 5
+      ) {
+        this.offset.x += diffX;
+        this.offset.y += diffY;
 
-      this.drag.inMotion = true;
-      this.drag.startingPositionX = event.offsetX;
-      this.drag.startingPositionY = event.offsetY;
+        this.drag.inMotion = true;
+        this.drag.startingPositionX = event.offsetX;
+        this.drag.startingPositionY = event.offsetY;
 
-      this.render(this.gameState);
+        this.render(this.gameState);
+      }
     }
   }
 
   onMouseUp(event) {
-    if (!this.drag.inMotion) {
-      this.toggleCell(...this._canvas2grid(event.offsetX, event.offsetY));
+    // onClick
+    if (this.mouseDown && !this.drag.inMotion) {
+      const [x, y] = this._canvas2grid(event.offsetX, event.offsetY);
+      this.toggleCell(x, y);
     }
 
     this.mouseDown = false;
@@ -139,13 +135,15 @@ export class View {
 
     window.addEventListener("resize", this.onWindowResize.bind(this));
 
-    this.centerBtn.addEventListener("click", () => {
-      if (!this.isCentered) {
-        this.centerCells();
-        this.render(this.gameState);
-      }
-      this.isCentered = !this.isCentered;
-    });
+    // this.centerBtn.addEventListener("click", () => {
+    //   if (!this.isCentered) {
+    //     this.centerCells();
+    //     this.render(this.gameState);
+    //     this.isCentered = true;
+    //   } else {
+    //     this.isCentered = false;
+    //   }
+    // });
 
     this.gridSizeSlider.addEventListener("input", () => {
       const newGridSize = parseInt(this.gridSizeSlider.value);
@@ -163,6 +161,10 @@ export class View {
   render(state) {
     this.gameState = state;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    if (this.isCentered) {
+      this.centerCells();
+    }
 
     // grid
     this.ctx.strokeStyle = this.colors.grid;

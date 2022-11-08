@@ -9,7 +9,10 @@ class Controller {
     this.model.bindGameStateUpdated(this.onGameStateUpdated);
     this.view.bindHandleToggleCell(this.handleToggleCell);
     this.view.bindHandlePause(this.handlePause);
-    this.view.bindHandleUpdateRateChange(this.handleUpdateRateChange);
+    this.view.bindHandleUpdateIntervalChange(this.handleUpdateIntervalChange);
+
+    this.updateInterval = 100;
+    this.isPaused = true;
 
     const pattern = [
       [-2, -1],
@@ -24,39 +27,40 @@ class Controller {
     }
 
     this.view.render(this.model.state);
-
-    this.updateInterval = 100;
   }
 
-  startGameCycle() {
-    this.updateIntervalId = setInterval(() => {
+  startGameCycle(interval) {
+    return setInterval(() => {
       this.model.update();
-    }, this.updateInterval);
+    }, interval);
   }
 
-  stopGameCycle() {
-    clearInterval(this.updateIntervalId);
-  }
-
-  handlePause = (isPaused) => {
-    if (isPaused) {
+  handlePause = () => {
+    if (this.isPaused) {
       this.model.update();
-      this.startGameCycle();
+      this.updateIntervalId = this.startGameCycle(this.updateInterval);
+      this.isPaused = false;
     } else {
-      this.stopGameCycle();
+      clearInterval(this.updateIntervalId);
+      this.isPaused = true;
     }
+    return this.isPaused;
   };
 
-  handleUpdateRateChange = (newInterval) => {
-    this.stopGameCycle();
+  handleUpdateIntervalChange = (newInterval) => {
+    clearInterval(this.updateIntervalId);
     this.updateInterval = newInterval;
-    this.model.update();
-    this.startGameCycle();
+
+    if (!this.isPaused) {
+      this.model.update();
+      this.updateIntervalId = this.startGameCycle(this.updateInterval);
+    }
   };
 
   handleToggleCell = (x, y) => {
     this.model.toggle(x, y);
     this.view.render(this.model.state);
+    this.view.setCount(0)
   };
 
   onGameStateUpdated = (state, count) => {

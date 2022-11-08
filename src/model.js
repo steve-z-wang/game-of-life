@@ -49,7 +49,8 @@ class Grid {
 
 export class Model {
   constructor() {
-    this.state = new Grid();
+    this.startingState = new Grid(); 
+    this.state = this.startingState.copy(); 
     this.stateCounter = 0;
   }
 
@@ -91,6 +92,8 @@ export class Model {
     } else {
       this._activate(this.state, x, y);
     }
+    this.startingState = this.state.copy(); 
+    this.stateCounter = 0; 
   }
 
   update() {
